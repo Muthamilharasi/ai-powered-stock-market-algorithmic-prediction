@@ -1,0 +1,453 @@
+{% extends "base.html" %}
+
+{% block title %}Market News - CashOnDay{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-4">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1>Market News & Sentiment</h1>
+                    <p class="text-muted">AI-powered news analysis with sentiment insights</p>
+                </div>
+                <div class="news-status">
+                    <span class="badge bg-info">AI Powered</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- News Search Section -->
+    <div class="row mb-4">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Stock News Analysis</h5>
+                </div>
+                <div class="card-body">
+                    <form id="newsForm">
+                        <div class="input-group mb-3">
+                            <input type="text" class="form-control" id="newsSymbol" 
+                                   placeholder="Enter stock symbol for news analysis (e.g., AAPL, TSLA)" 
+                                   autocomplete="off">
+                            <button class="btn btn-primary" type="submit" id="analyzeBtn">
+                                <i data-feather="search"></i>
+                                Analyze News
+                            </button>
+                        </div>
+                        <small class="text-muted">
+                            <i data-feather="info"></i>
+                            Get latest news articles with AI sentiment analysis
+                        </small>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Popular Stocks</h5>
+                </div>
+                <div class="card-body">
+                    <div class="popular-stocks">
+                        <button class="btn btn-outline-primary btn-sm me-2 mb-2" onclick="analyzeNews('AAPL')">AAPL</button>
+                        <button class="btn btn-outline-primary btn-sm me-2 mb-2" onclick="analyzeNews('TSLA')">TSLA</button>
+                        <button class="btn btn-outline-primary btn-sm me-2 mb-2" onclick="analyzeNews('MSFT')">MSFT</button>
+                        <button class="btn btn-outline-primary btn-sm me-2 mb-2" onclick="analyzeNews('GOOGL')">GOOGL</button>
+                        <button class="btn btn-outline-primary btn-sm me-2 mb-2" onclick="analyzeNews('AMZN')">AMZN</button>
+                        <button class="btn btn-outline-primary btn-sm me-2 mb-2" onclick="analyzeNews('META')">META</button>
+                        <button class="btn btn-outline-primary btn-sm me-2 mb-2" onclick="analyzeNews('NVDA')">NVDA</button>
+                        <button class="btn btn-outline-primary btn-sm me-2 mb-2" onclick="analyzeNews('NFLX')">NFLX</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Loading Indicator -->
+    <div id="newsLoadingIndicator" class="row mb-4" style="display: none;">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center py-4">
+                    <div class="spinner-border text-primary mb-3" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <h5>Analyzing News</h5>
+                    <p class="text-muted">Fetching latest articles and analyzing sentiment...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- News Analysis Results -->
+    <div id="newsResults" style="display: none;">
+        <!-- Sentiment Overview -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Sentiment Overview for <span id="analyzedSymbol"></span></h5>
+                        <small class="text-muted" id="analysisTimestamp"></small>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-lg-3 col-md-6 mb-3">
+                                <div class="sentiment-stat">
+                                    <div class="sentiment-icon positive">
+                                        <i data-feather="trending-up"></i>
+                                    </div>
+                                    <div class="sentiment-content">
+                                        <h3 id="positivePercent">0%</h3>
+                                        <p>Positive</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-lg-3 col-md-6 mb-3">
+                                <div class="sentiment-stat">
+                                    <div class="sentiment-icon negative">
+                                        <i data-feather="trending-down"></i>
+                                    </div>
+                                    <div class="sentiment-content">
+                                        <h3 id="negativePercent">0%</h3>
+                                        <p>Negative</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-lg-3 col-md-6 mb-3">
+                                <div class="sentiment-stat">
+                                    <div class="sentiment-icon neutral">
+                                        <i data-feather="minus"></i>
+                                    </div>
+                                    <div class="sentiment-content">
+                                        <h3 id="neutralPercent">0%</h3>
+                                        <p>Neutral</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-lg-3 col-md-6 mb-3">
+                                <div class="sentiment-stat">
+                                    <div class="sentiment-icon overall">
+                                        <i data-feather="target"></i>
+                                    </div>
+                                    <div class="sentiment-content">
+                                        <h3 id="overallSentiment">-</h3>
+                                        <p>Overall</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Sentiment Chart -->
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <canvas id="sentimentChart" width="400" height="100"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- News Articles -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">News Articles (<span id="articleCount">0</span>)</h5>
+                        <div class="news-filters">
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-outline-primary active" onclick="filterArticles('all')">All</button>
+                                <button class="btn btn-outline-success" onclick="filterArticles('POSITIVE')">Positive</button>
+                                <button class="btn btn-outline-danger" onclick="filterArticles('NEGATIVE')">Negative</button>
+                                <button class="btn btn-outline-secondary" onclick="filterArticles('NEUTRAL')">Neutral</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="newsArticles">
+                            <!-- Articles will be inserted here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Error Message -->
+    <div id="newsErrorMessage" class="row" style="display: none;">
+        <div class="col-12">
+            <div class="card border-danger">
+                <div class="card-body text-center">
+                    <i data-feather="alert-circle" size="48" class="text-danger mb-3"></i>
+                    <h5 class="text-danger">News Analysis Failed</h5>
+                    <p id="newsErrorText" class="text-muted"></p>
+                    <button class="btn btn-outline-primary" onclick="hideNewsError()">Try Again</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Empty State -->
+    <div id="newsEmptyState" class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i data-feather="file-text" size="64" class="text-muted mb-3"></i>
+                    <h4>Market News Analysis</h4>
+                    <p class="text-muted">Enter a stock symbol above to get AI-powered news sentiment analysis</p>
+                    <div class="mt-4">
+                        <button class="btn btn-primary me-2" onclick="analyzeNews('AAPL')">Analyze AAPL</button>
+                        <button class="btn btn-outline-primary" onclick="analyzeNews('TSLA')">Analyze TSLA</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let sentimentChart = null;
+let currentNewsData = null;
+
+document.getElementById('newsForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const symbol = document.getElementById('newsSymbol').value.trim();
+    if (symbol) {
+        analyzeNews(symbol);
+    }
+});
+
+async function analyzeNews(symbol) {
+    document.getElementById('newsSymbol').value = symbol;
+    showNewsLoading();
+    hideNewsError();
+    hideNewsResults();
+    hideEmptyState();
+    
+    try {
+        const response = await fetch(`/api/news/${symbol}`);
+        const data = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(data.error || 'Failed to fetch news data');
+        }
+        
+        currentNewsData = data;
+        displayNewsAnalysis(data);
+        showNewsResults();
+    } catch (error) {
+        showNewsError(error.message);
+    } finally {
+        hideNewsLoading();
+    }
+}
+
+function displayNewsAnalysis(data) {
+    // Update header
+    document.getElementById('analyzedSymbol').textContent = data.symbol;
+    document.getElementById('analysisTimestamp').textContent = data.timestamp;
+    
+    // Update sentiment stats
+    document.getElementById('positivePercent').textContent = data.sentiment_distribution.positive + '%';
+    document.getElementById('negativePercent').textContent = data.sentiment_distribution.negative + '%';
+    document.getElementById('neutralPercent').textContent = data.sentiment_distribution.neutral + '%';
+    
+    const overallElement = document.getElementById('overallSentiment');
+    overallElement.textContent = data.overall_sentiment;
+    overallElement.className = getSentimentClass(data.overall_sentiment);
+    
+    document.getElementById('articleCount').textContent = data.total_articles;
+    
+    // Create sentiment chart
+    createSentimentChart(data.sentiment_distribution);
+    
+    // Display articles
+    displayArticles(data.articles);
+}
+
+function createSentimentChart(distribution) {
+    const ctx = document.getElementById('sentimentChart').getContext('2d');
+    
+    if (sentimentChart) {
+        sentimentChart.destroy();
+    }
+    
+    sentimentChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Positive', 'Negative', 'Neutral'],
+            datasets: [{
+                data: [distribution.positive, distribution.negative, distribution.neutral],
+                backgroundColor: ['#28a745', '#dc3545', '#6c757d'],
+                borderColor: ['#28a745', '#dc3545', '#6c757d'],
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+}
+
+function displayArticles(articles) {
+    const container = document.getElementById('newsArticles');
+    container.innerHTML = '';
+    
+    if (articles.length === 0) {
+        container.innerHTML = '<p class="text-muted text-center">No articles found</p>';
+        return;
+    }
+    
+    articles.forEach((article, index) => {
+        const articleCard = createArticleCard(article, index);
+        container.appendChild(articleCard);
+    });
+}
+
+function createArticleCard(article, index) {
+    const card = document.createElement('div');
+    card.className = 'news-article-card mb-3';
+    card.dataset.sentiment = article.sentiment.label;
+    
+    const sentimentBadge = getSentimentBadge(article.sentiment);
+    const confidenceBadge = getConfidenceBadge(article.sentiment.confidence);
+    
+    card.innerHTML = `
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <h6 class="card-title mb-0">${article.title}</h6>
+                    <div class="sentiment-badges">
+                        ${sentimentBadge}
+                        ${confidenceBadge}
+                    </div>
+                </div>
+                
+                <p class="card-text text-muted">${article.description || 'No description available'}</p>
+                
+                <div class="article-meta d-flex justify-content-between align-items-center">
+                    <small class="text-muted">
+                        <i data-feather="clock" width="14" height="14"></i>
+                        ${article.publishedAt} • ${article.source}
+                    </small>
+                    <a href="${article.url}" target="_blank" class="btn btn-sm btn-outline-primary">
+                        <i data-feather="external-link" width="14" height="14"></i>
+                        Read More
+                    </a>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    return card;
+}
+
+function getSentimentBadge(sentiment) {
+    const badgeClass = getSentimentBadgeClass(sentiment.label);
+    return `<span class="badge ${badgeClass}">${sentiment.label}</span>`;
+}
+
+function getSentimentBadgeClass(sentiment) {
+    switch (sentiment) {
+        case 'POSITIVE': return 'bg-success';
+        case 'NEGATIVE': return 'bg-danger';
+        case 'NEUTRAL': return 'bg-secondary';
+        default: return 'bg-secondary';
+    }
+}
+
+function getConfidenceBadge(confidence) {
+    const badgeClass = confidence === 'High' ? 'bg-info' : confidence === 'Medium' ? 'bg-warning' : 'bg-light text-dark';
+    return `<span class="badge ${badgeClass}">${confidence}</span>`;
+}
+
+function getSentimentClass(sentiment) {
+    switch (sentiment) {
+        case 'POSITIVE': return 'text-success';
+        case 'NEGATIVE': return 'text-danger';
+        case 'NEUTRAL': return 'text-secondary';
+        default: return 'text-secondary';
+    }
+}
+
+function filterArticles(sentiment) {
+    const articles = document.querySelectorAll('.news-article-card');
+    const buttons = document.querySelectorAll('.news-filters .btn');
+    
+    // Update active button
+    buttons.forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+    
+    // Filter articles
+    articles.forEach(article => {
+        if (sentiment === 'all' || article.dataset.sentiment === sentiment) {
+            article.style.display = 'block';
+        } else {
+            article.style.display = 'none';
+        }
+    });
+}
+
+function showNewsLoading() {
+    document.getElementById('newsLoadingIndicator').style.display = 'block';
+}
+
+function hideNewsLoading() {
+    document.getElementById('newsLoadingIndicator').style.display = 'none';
+}
+
+function showNewsResults() {
+    document.getElementById('newsResults').style.display = 'block';
+}
+
+function hideNewsResults() {
+    document.getElementById('newsResults').style.display = 'none';
+}
+
+function showNewsError(message) {
+    document.getElementById('newsErrorText').textContent = message;
+    document.getElementById('newsErrorMessage').style.display = 'block';
+}
+
+function hideNewsError() {
+    document.getElementById('newsErrorMessage').style.display = 'none';
+}
+
+function hideEmptyState() {
+    document.getElementById('newsEmptyState').style.display = 'none';
+}
+
+// Initialize feather icons after dynamic content
+function refreshFeatherIcons() {
+    feather.replace();
+}
+
+// Refresh icons when articles are loaded
+document.addEventListener('DOMContentLoaded', function() {
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            if (mutation.type === 'childList') {
+                refreshFeatherIcons();
+            }
+        });
+    });
+    
+    const newsContainer = document.getElementById('newsArticles');
+    if (newsContainer) {
+        observer.observe(newsContainer, { childList: true, subtree: true });
+    }
+});
+</script>
+{% endblock %}

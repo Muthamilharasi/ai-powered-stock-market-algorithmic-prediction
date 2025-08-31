@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - CashOnDay{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-4">
+    <!-- Welcome Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="welcome-section">
+                <h1>Welcome back, {{ user.username }}!</h1>
+                <p class="text-muted">Here's your portfolio overview and market insights</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Portfolio Overview Cards -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="stats-card">
+                <div class="stats-icon bg-primary">
+                    <i data-feather="dollar-sign"></i>
+                </div>
+                <div class="stats-content">
+                    <h3>${{ "%.2f"|format(portfolio.total_value) }}</h3>
+                    <p>Total Portfolio Value</p>
+                    {% set portfolio_change = portfolio.total_value - 100000 %}
+                    <small class="{% if portfolio_change >= 0 %}text-success{% else %}text-danger{% endif %}">
+                        {% if portfolio_change >= 0 %}+{% endif %}${{ "%.2f"|format(portfolio_change) }}
+                    </small>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="stats-card">
+                <div class="stats-icon bg-success">
+                    <i data-feather="trending-up"></i>
+                </div>
+                <div class="stats-content">
+                    <h3>${{ "%.2f"|format(portfolio.balance) }}</h3>
+                    <p>Available Cash</p>
+                    <small class="text-muted">Ready to invest</small>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="stats-card">
+                <div class="stats-icon bg-info">
+                    <i data-feather="briefcase"></i>
+                </div>
+                <div class="stats-content">
+                    <h3>{{ positions|length }}</h3>
+                    <p>Active Positions</p>
+                    <small class="text-muted">Current holdings</small>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="stats-card">
+                <div class="stats-icon bg-warning">
+                    <i data-feather="activity"></i>
+                </div>
+                <div class="stats-content">
+                    <h3>{{ recent_trades|length }}</h3>
+                    <p>Recent Trades</p>
+                    <small class="text-muted">Last 5 trades</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Main Content Grid -->
+    <div class="row">
+        <!-- Watchlist -->
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Market Watchlist</h5>
+                    <button class="btn btn-sm btn-outline-primary" onclick="refreshWatchlist()">
+                        <i data-feather="refresh-cw"></i>
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="watchlist">
+                        {% for stock in watchlist %}
+                        <div class="watchlist-item">
+                            <div class="stock-info">
+                                <strong>{{ stock.symbol }}</strong>
+                                <span class="text-muted">${{ "%.2f"|format(stock.price) }}</span>
+                            </div>
+                            <div class="stock-change {% if stock.change >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                {% if stock.change >= 0 %}+{% endif %}{{ "%.2f"|format(stock.change) }}%
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Recent Activities -->
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0">Recent Activities</h5>
+                </div>
+                <div class="card-body">
+                    <div class="activity-list">
+                        {% for activity in recent_activities %}
+                        <div class="activity-item">
+                            <div class="activity-icon">
+                                <i data-feather="{{ activity.icon }}"></i>
+                            </div>
+                            <div class="activity-content">
+                                <p class="mb-0">{{ activity.description }}</p>
+                                <small class="text-muted">{{ activity.timestamp.strftime('%Y-%m-%d %H:%M') }}</small>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Current Positions -->
+    {% if positions %}
+    <div class="row">
+        <div class="col-12 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Current Positions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Symbol</th>
+                                    <th>Quantity</th>
+                                    <th>Avg Price</th>
+                                    <th>Current Price</th>
+                                    <th>Market Value</th>
+                                    <th>P&L</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for position in positions %}
+                                <tr>
+                                    <td><strong>{{ position.symbol }}</strong></td>
+                                    <td>{{ position.quantity }}</td>
+                                    <td>${{ "%.2f"|format(position.avg_price) }}</td>
+                                    <td>${{ "%.2f"|format(position.current_price) }}</td>
+                                    <td>${{ "%.2f"|format(position.market_value) }}</td>
+                                    <td class="{% if position.unrealized_pnl >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                        {% if position.unrealized_pnl >= 0 %}+{% endif %} ${{ "%.2f"|format(position.unrealized_pnl) }}
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-danger" onclick="sellPosition('{{ position.symbol }}', {{ position.quantity }})">
+                                            Sell
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Quick Actions -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="quick-actions">
+                        <a href="{{ url_for('predict') }}" class="btn btn-primary me-2">
+                            <i data-feather="trending-up"></i>
+                            Get AI Prediction
+                        </a>
+                        <a href="{{ url_for('trading') }}" class="btn btn-success me-2">
+                            <i data-feather="activity"></i>
+                            Start Trading
+                        </a>
+                        <a href="{{ url_for('news') }}" class="btn btn-info me-2">
+                            <i data-feather="file-text"></i>
+                            Market News
+                        </a>
+                        <a href="{{ url_for('alerts') }}" class="btn btn-warning">
+                            <i data-feather="bell"></i>
+                            Set Alerts
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function refreshWatchlist() {
+    location.reload();
+}
+
+function sellPosition(symbol, quantity) {
+    if (confirm(`Are you sure you want to sell all ${quantity} shares of ${symbol}?`)) {
+        // Implement sell functionality
+        window.location.href = `{{ url_for('trading') }}?action=sell&symbol=${symbol}&quantity=${quantity}`;
+    }
+}
+
+// Real-time updates
+const socket = io();
+socket.on('price_update', function(data) {
+    // Update watchlist prices in real-time
+    console.log('Price update received:', data);
+});
+</script>
+{% endblock %}

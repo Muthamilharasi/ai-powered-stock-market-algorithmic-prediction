@@ -1,0 +1,500 @@
+{% extends "base.html" %}
+
+{% block title %}AI Stock Prediction - CashOnDay{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@2.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-4">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1>AI Stock Prediction</h1>
+                    <p class="text-muted">Get AI-powered predictions with explainable insights</p>
+                </div>
+                <div class="prediction-status">
+                    <span class="badge bg-info">Powered by ML</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Stock Search Section -->
+    <div class="row mb-4">
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Stock Symbol Search</h5>
+                </div>
+                <div class="card-body">
+                    <form id="predictionForm">
+                        <div class="input-group mb-3">
+                            <input type="text" class="form-control" id="stockSymbol" 
+                                   placeholder="Enter stock symbol (e.g., AAPL, MSFT, TSLA)" 
+                                   autocomplete="off">
+                            <button class="btn btn-primary" type="submit" id="predictBtn">
+                                <i data-feather="search"></i>
+                                Get Prediction
+                            </button>
+                        </div>
+                        <small class="text-muted">
+                            <i data-feather="info"></i>
+                            Supports US stocks, Indian stocks (add .NS suffix), and major international exchanges
+                        </small>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Popular Stocks</h5>
+                </div>
+                <div class="card-body">
+                    <div class="popular-stocks">
+                        <button class="btn btn-outline-primary btn-sm me-2 mb-2" onclick="searchStock('AAPL')">AAPL</button>
+                        <button class="btn btn-outline-primary btn-sm me-2 mb-2" onclick="searchStock('TSLA')">TSLA</button>
+                        <button class="btn btn-outline-primary btn-sm me-2 mb-2" onclick="searchStock('MSFT')">MSFT</button>
+                        <button class="btn btn-outline-primary btn-sm me-2 mb-2" onclick="searchStock('GOOGL')">GOOGL</button>
+                        <button class="btn btn-outline-primary btn-sm me-2 mb-2" onclick="searchStock('AMZN')">AMZN</button>
+                        <button class="btn btn-outline-primary btn-sm me-2 mb-2" onclick="searchStock('META')">META</button>
+                        <button class="btn btn-outline-primary btn-sm me-2 mb-2" onclick="searchStock('NVDA')">NVDA</button>
+                        <button class="btn btn-outline-primary btn-sm me-2 mb-2" onclick="searchStock('INFY.NS')">INFY.NS</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Loading Indicator -->
+    <div id="loadingIndicator" class="row mb-4" style="display: none;">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center py-4">
+                    <div class="spinner-border text-primary mb-3" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <h5>Analyzing Stock Data</h5>
+                    <p class="text-muted">Fetching market data and generating AI prediction...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Prediction Results -->
+    <div id="predictionResults" style="display: none;">
+        <!-- Stock Info Card -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-md-3">
+                                <h3 id="stockSymbolDisplay" class="mb-0"></h3>
+                                <p id="companyName" class="text-muted mb-0"></p>
+                            </div>
+                            <div class="col-md-3">
+                                <h4 id="currentPrice" class="mb-0"></h4>
+                                <p id="priceChange" class="mb-0"></p>
+                            </div>
+                            <div class="col-md-3">
+                                <p class="mb-0 text-muted">Market Cap</p>
+                                <h5 id="marketCap" class="mb-0"></h5>
+                            </div>
+                            <div class="col-md-3">
+                                <p class="mb-0 text-muted">Volume</p>
+                                <h5 id="volume" class="mb-0"></h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Prediction and Chart Row -->
+        <div class="row mb-4">
+            <!-- AI Prediction Card -->
+            <div class="col-lg-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h5 class="mb-0">AI Prediction</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="prediction-summary">
+                            <div class="prediction-price mb-3">
+                                <p class="text-muted mb-1">Predicted Price (Next Day)</p>
+                                <h2 id="predictedPrice" class="text-primary mb-0"></h2>
+                            </div>
+                            
+                            <div class="prediction-change mb-3">
+                                <p class="text-muted mb-1">Expected Change</p>
+                                <h4 id="priceChangePercent" class="mb-0"></h4>
+                            </div>
+                            
+                            <div class="confidence-meter mb-3">
+                                <p class="text-muted mb-1">Confidence Level</p>
+                                <div class="progress mb-2">
+                                    <div id="confidenceBar" class="progress-bar" role="progressbar"></div>
+                                </div>
+                                <p id="confidenceText" class="mb-0"></p>
+                            </div>
+                            
+                            <div class="trend-indicator">
+                                <p class="text-muted mb-1">Trend</p>
+                                <span id="trendBadge" class="badge"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Price Chart -->
+            <div class="col-lg-8 mb-4">
+                <div class="card h-100">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Price Chart (1 Year)</h5>
+                        <div class="chart-controls">
+                            <button class="btn btn-sm btn-outline-primary active" onclick="changeChartType('line')">Line</button>
+                            <button class="btn btn-sm btn-outline-primary" onclick="changeChartType('candlestick')">Candlestick</button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="priceChart" width="400" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Technical Indicators and Explanation -->
+        <div class="row mb-4">
+            <!-- Technical Indicators -->
+            <div class="col-lg-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h5 class="mb-0">Technical Indicators</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="technical-indicators">
+                            <div class="indicator-item">
+                                <div class="d-flex justify-content-between">
+                                    <span>RSI (14)</span>
+                                    <span id="rsiValue" class="fw-bold"></span>
+                                </div>
+                            </div>
+                            <div class="indicator-item">
+                                <div class="d-flex justify-content-between">
+                                    <span>SMA (20)</span>
+                                    <span id="sma20Value" class="fw-bold"></span>
+                                </div>
+                            </div>
+                            <div class="indicator-item">
+                                <div class="d-flex justify-content-between">
+                                    <span>SMA (50)</span>
+                                    <span id="sma50Value" class="fw-bold"></span>
+                                </div>
+                            </div>
+                            <div class="indicator-item">
+                                <div class="d-flex justify-content-between">
+                                    <span>P/E Ratio</span>
+                                    <span id="peRatio" class="fw-bold"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- AI Explanation -->
+            <div class="col-lg-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h5 class="mb-0">AI Explanation</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="aiExplanation">
+                            <p class="text-muted">AI reasoning will appear here after prediction...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Model Performance -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Model Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <p class="text-muted mb-1">Model Type</p>
+                                <p class="fw-bold">Random Forest</p>
+                            </div>
+                            <div class="col-md-3">
+                                <p class="text-muted mb-1">Accuracy</p>
+                                <p id="modelAccuracy" class="fw-bold"></p>
+                            </div>
+                            <div class="col-md-3">
+                                <p class="text-muted mb-1">Prediction Date</p>
+                                <p id="predictionDate" class="fw-bold"></p>
+                            </div>
+                            <div class="col-md-3">
+                                <p class="text-muted mb-1">Data Points</p>
+                                <p class="fw-bold">365 days</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Error Message -->
+    <div id="errorMessage" class="row" style="display: none;">
+        <div class="col-12">
+            <div class="card border-danger">
+                <div class="card-body text-center">
+                    <i data-feather="alert-circle" size="48" class="text-danger mb-3"></i>
+                    <h5 class="text-danger">Prediction Failed</h5>
+                    <p id="errorText" class="text-muted"></p>
+                    <button class="btn btn-outline-primary" onclick="hideError()">Try Again</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let priceChart = null;
+
+document.getElementById('predictionForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const symbol = document.getElementById('stockSymbol').value.trim();
+    if (symbol) {
+        getPrediction(symbol);
+    }
+});
+
+function searchStock(symbol) {
+    document.getElementById('stockSymbol').value = symbol;
+    getPrediction(symbol);
+}
+
+async function getPrediction(symbol) {
+    showLoading();
+    hideError();
+    hideResults();
+    
+    try {
+        const response = await fetch(`/api/stock-data/${symbol}`);
+        const data = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(data.error || 'Failed to fetch stock data');
+        }
+        
+        displayPrediction(data);
+        showResults();
+    } catch (error) {
+        showError(error.message);
+    } finally {
+        hideLoading();
+    }
+}
+
+function displayPrediction(data) {
+    // Update stock info
+    document.getElementById('stockSymbolDisplay').textContent = data.symbol;
+    document.getElementById('companyName').textContent = data.company_name;
+    document.getElementById('currentPrice').textContent = `$${data.current_price}`;
+    
+    const priceChangeElement = document.getElementById('priceChange');
+    const changeClass = data.price_change >= 0 ? 'text-success' : 'text-danger';
+    const changeSign = data.price_change >= 0 ? '+' : '';
+    priceChangeElement.className = changeClass;
+    priceChangeElement.textContent = `${changeSign}$${data.price_change} (${changeSign}${data.price_change_percent}%)`;
+    
+    document.getElementById('marketCap').textContent = data.market_cap ? formatNumber(data.market_cap) : 'N/A';
+    document.getElementById('volume').textContent = formatNumber(data.volume);
+    
+    // Update prediction results
+    if (data.prediction) {
+        document.getElementById('predictedPrice').textContent = `$${data.prediction.predicted_price}`;
+        
+        const predChangeElement = document.getElementById('priceChangePercent');
+        const predChangeClass = data.prediction.price_change_percent >= 0 ? 'text-success' : 'text-danger';
+        const predChangeSign = data.prediction.price_change_percent >= 0 ? '+' : '';
+        predChangeElement.className = predChangeClass;
+        predChangeElement.textContent = `${predChangeSign}${data.prediction.price_change_percent}%`;
+        
+        // Confidence meter
+        const confidence = data.prediction.confidence;
+        document.getElementById('confidenceBar').style.width = `${confidence}%`;
+        document.getElementById('confidenceBar').className = `progress-bar ${getConfidenceColor(confidence)}`;
+        document.getElementById('confidenceText').textContent = `${confidence}% Confidence`;
+        
+        // Trend indicator
+        const trendElement = document.getElementById('trendBadge');
+        trendElement.textContent = data.prediction.trend;
+        trendElement.className = `badge ${getTrendColor(data.prediction.trend)}`;
+        
+        // Model info
+        document.getElementById('modelAccuracy').textContent = `${data.prediction.model_accuracy}%`;
+        document.getElementById('predictionDate').textContent = data.prediction.prediction_date;
+        
+        // AI Explanation
+        displayExplanation(data.prediction.explanation);
+    }
+    
+    // Update technical indicators
+    document.getElementById('rsiValue').textContent = data.technical_indicators.rsi || 'N/A';
+    document.getElementById('sma20Value').textContent = data.technical_indicators.sma_20 ? `$${data.technical_indicators.sma_20}` : 'N/A';
+    document.getElementById('sma50Value').textContent = data.technical_indicators.sma_50 ? `$${data.technical_indicators.sma_50}` : 'N/A';
+    document.getElementById('peRatio').textContent = data.pe_ratio || 'N/A';
+    
+    // Create chart
+    createPriceChart(data.chart_data);
+}
+
+function displayExplanation(explanations) {
+    const explanationContainer = document.getElementById('aiExplanation');
+    explanationContainer.innerHTML = '';
+    
+    if (explanations && explanations.length > 0) {
+        explanations.forEach((explanation, index) => {
+            const div = document.createElement('div');
+            div.className = 'explanation-item mb-2';
+            div.innerHTML = `
+                <div class="d-flex align-items-start">
+                    <span class="badge bg-primary me-2">${index + 1}</span>
+                    <p class="mb-0">${explanation}</p>
+                </div>
+            `;
+            explanationContainer.appendChild(div);
+        });
+    } else {
+        explanationContainer.innerHTML = '<p class="text-muted">No explanation available</p>';
+    }
+}
+
+function createPriceChart(chartData) {
+    const ctx = document.getElementById('priceChart').getContext('2d');
+    
+    if (priceChart) {
+        priceChart.destroy();
+    }
+    
+    priceChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: chartData.map(d => d.x),
+            datasets: [{
+                label: 'Close Price',
+                data: chartData.map(d => d.close),
+                borderColor: '#0f4c75',
+                backgroundColor: 'rgba(15, 76, 117, 0.1)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: {
+                    type: 'time',
+                    time: {
+                        unit: 'month'
+                    }
+                },
+                y: {
+                    beginAtZero: false,
+                    ticks: {
+                        callback: function(value) {
+                            return '$' + value.toFixed(2);
+                        }
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return 'Price: $' + context.parsed.y.toFixed(2);
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+function formatNumber(num) {
+    if (num >= 1e12) return (num / 1e12).toFixed(2) + 'T';
+    if (num >= 1e9) return (num / 1e9).toFixed(2) + 'B';
+    if (num >= 1e6) return (num / 1e6).toFixed(2) + 'M';
+    if (num >= 1e3) return (num / 1e3).toFixed(2) + 'K';
+    return num.toLocaleString();
+}
+
+function getConfidenceColor(confidence) {
+    if (confidence >= 80) return 'bg-success';
+    if (confidence >= 60) return 'bg-warning';
+    return 'bg-danger';
+}
+
+function getTrendColor(trend) {
+    if (trend.includes('Bullish')) return 'bg-success';
+    if (trend.includes('Bearish')) return 'bg-danger';
+    return 'bg-secondary';
+}
+
+function showLoading() {
+    document.getElementById('loadingIndicator').style.display = 'block';
+}
+
+function hideLoading() {
+    document.getElementById('loadingIndicator').style.display = 'none';
+}
+
+function showResults() {
+    document.getElementById('predictionResults').style.display = 'block';
+}
+
+function hideResults() {
+    document.getElementById('predictionResults').style.display = 'none';
+}
+
+function showError(message) {
+    document.getElementById('errorText').textContent = message;
+    document.getElementById('errorMessage').style.display = 'block';
+}
+
+function hideError() {
+    document.getElementById('errorMessage').style.display = 'none';
+}
+
+function changeChartType(type) {
+    // Update active button
+    document.querySelectorAll('.chart-controls .btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    event.target.classList.add('active');
+    
+    // Chart type changing would require more complex implementation
+    // For now, just show the line chart
+}
+</script>
+{% endblock %}
