@@ -11,7 +11,6 @@ import numpy as np
 import pandas as pd
 import yfinance as yf
 import plotly.graph_objs as go
-
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 from flask_bcrypt import Bcrypt
 from flask_sqlalchemy import SQLAlchemy
@@ -241,6 +240,15 @@ def register():
         flash("Registration successful. Please log in.", "success")
         return redirect(url_for('login'))
     return render_template('register.html')
+'''def send_alerts():
+    with app.app_context():
+        users = User.query.all()
+        for user in users:
+            print(user.username)
+def background_job():
+    with app.app_context():
+        # your flask/db logic
+        pass'''
 
 @app.route('/forgot-password', methods=['GET', 'POST'])
 def forgot_password():
@@ -424,6 +432,23 @@ def profile():
     return render_template('profile.html', user=user, transactions=transactions)
 
 # ------------------ PREDICTION ROUTES ------------------
+
+api_key = "698c83bbc29e4cfca8a617cb5783f809"
+predictor = StockPredictor(twelve_api_key=api_key)
+
+# Single stock prediction
+result = predictor.predict(symbol="AAPL")
+print(result)
+
+# Multiple stocks
+symbols = ["AAPL","MSFT","GOOGL","RELIANCE.NS"]
+for sym in symbols:
+    res = predictor.predict(symbol=sym)
+    print(sym, res)
+
+
+# Initialize the predictor with your API key
+predictor = StockPredictor(twelve_api_key=api_key)
 @app.route('/predict', methods=['GET', 'POST'])
 @requires_auth
 def predict():
@@ -579,6 +604,8 @@ def get_stock_symbol_variations(symbol):
     
     return variations
 
+
+
 # ------------------ TRADING ROUTES ------------------
 @app.route('/trading')
 @requires_auth
@@ -594,7 +621,7 @@ def trading():
                          positions=positions,
                          trades=trades)
 
-@app.route('/api/place-order', methods=['POST'])
+@app.route('/api/place-order', methods=['POST','GET'])
 @requires_auth
 def place_order():
     try:
@@ -633,6 +660,22 @@ def place_order():
 @requires_auth
 def news():
     return render_template('news.html')
+'''@app.route("/api/news/<symbol>")
+def api_news(symbol):
+    symbol = symbol.upper().strip()
+    
+    # Use your news.py analyze_news function
+    result = analyze_news(symbol)
+
+    # If invalid ticker or no news, send polite message with show_chart=False
+    if "error" in result:
+        result["show_chart"] = False
+        return jsonify(result), 200  # keep 200 so frontend can handle nicely
+
+    # Valid ticker and news found
+    result["show_chart"] = True
+    return jsonify(result), 200'''
+
 
 @app.route('/api/news/<symbol>')
 @requires_auth
@@ -678,8 +721,17 @@ def settings():
 @app.route('/alerts')
 @requires_auth
 def alerts():
-    user_alerts = Alert.query.filter_by(user_id=session['user_id']).order_by(Alert.created_at.desc()).all()
-    return render_template('alerts.html', alerts=user_alerts)
+    user_id = session['user_id']
+    
+    # fetch all alerts for the logged-in user
+    user_alerts = Alert.query.filter_by(user_id=user_id).order_by(Alert.created_at.desc()).all()
+    
+    # fetch the user object (so Jinja2 can use user.telegram_chat_id)
+    user = User.query.get(user_id)
+    
+    return render_template('alerts.html', alerts=user_alerts, user=user)
+
+
 
 @app.route('/api/create-alert', methods=['POST'])
 @requires_auth

@@ -1,0 +1,14 @@
+{
+    "sqltools.connections": [
+        {
+            "previewLimit": 50,
+            "server": "localhost",
+            "port": 5432,
+            "driver": "PostgreSQL",
+            "name": "PG LOCAL",
+            "database": "cash2",
+            "username": "postgres",
+            "password": "2303"
+        }
+    ]
+}

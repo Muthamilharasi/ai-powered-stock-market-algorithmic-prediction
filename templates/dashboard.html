@@ -79,7 +79,7 @@
             <div class="card h-100">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">Market Watchlist</h5>
-                    <button class="btn btn-sm btn-outline-primary" onclick="refreshWatchlist()">
+                    <button title="refreshwatchlist" class="btn btn-sm btn-outline-primary" onclick="refreshWatchlist()">
                         <i data-feather="refresh-cw"></i>
                     </button>
                 </div>
@@ -160,7 +160,7 @@
                                         {% if position.unrealized_pnl >= 0 %}+{% endif %} ${{ "%.2f"|format(position.unrealized_pnl) }}
                                     </td>
                                     <td>
-                                        <button class="btn btn-sm btn-danger" onclick="sellPosition('{{ position.symbol }}', {{ position.quantity }})">
+                                        <button class="btn btn-sm btn-danger" onclick="sellPosition('{{ position.symbol }}', '{{ position.quantity }}')">
                                             Sell
                                         </button>
                                     </td>

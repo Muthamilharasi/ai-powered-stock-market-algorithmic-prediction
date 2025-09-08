@@ -158,14 +158,14 @@
                                     <td>
                                         <div class="btn-group btn-group-sm">
                                             {% if alert.status == 'Active' %}
-                                            <button class="btn btn-outline-secondary" onclick="pauseAlert({{ alert.id }})">
+                                            <button title="pausealert" class="btn btn-outline-secondary" onclick="pauseAlert('{{ alert.id }}')">
                                                 <i data-feather="pause"></i>
                                             </button>
                                             {% endif %}
-                                            <button class="btn btn-outline-primary" onclick="editAlert({{ alert.id }})">
+                                            <button title="editalert"class="btn btn-outline-primary" onclick="editAlert('{{ alert.id }}')">
                                                 <i data-feather="edit"></i>
                                             </button>
-                                            <button class="btn btn-outline-danger" onclick="deleteAlert({{ alert.id }})">
+                                            <button title="deletealert" class="btn btn-outline-danger" onclick="deleteAlert('{{ alert.id }}')">
                                                 <i data-feather="trash-2"></i>
                                             </button>
                                         </div>
@@ -198,7 +198,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Create Price Alert</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <button title="modal" type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <form id="createAlertForm">
@@ -213,7 +213,7 @@
                         <label for="alertCondition" class="form-label">Alert Condition</label>
                         <div class="row">
                             <div class="col-6">
-                                <select class="form-select" id="alertOperator" required>
+                                <select title="alert condition" class="form-select" id="alertOperator" required>
                                     <option value="">Select condition</option>
                                     <option value=">">Price above</option>
                                     <option value="<">Price below</option>

@@ -4,60 +4,101 @@
 {% block body_class %}auth-page{% endblock %}
 
 {% block content %}
-<div class="auth-container">
-    <div class="auth-card">
-        <div class="auth-header">
-            <h2>Welcome Back</h2>
-            <p>Sign in to your CashOnDay account</p>
+<div class="auth-page-container d-flex align-items-center justify-content-center min-vh-100 position-relative overflow-hidden">
+
+    <!-- Floating gradient blobs -->
+    <div class="blob blob1"></div>
+    <div class="blob blob2"></div>
+    <div class="blob blob3"></div>
+
+    <!-- Animated man (Lottie) -->
+    <div id="intro-animation" class="position-absolute top-50 start-50 translate-middle">
+        <lottie-player 
+            src="https://assets10.lottiefiles.com/packages/lf20_jcikwtux.json"
+            background="transparent"  
+            speed="1"  
+            style="width: 350px; height: 350px;"  
+            autoplay>
+        </lottie-player>
+    </div>
+    <!-- Flash messages -->
+
+
+
+    <!-- Login Card (hidden until animation ends) -->
+    <div id="login-card" class="auth-card glassy-card p-4 p-md-5 text-white position-relative d-none">
+        <div class="text-center mb-4">
+            <h2 class="fw-bold">Welcome Back 👋</h2>
+            <p class="text-white-50">Sign in to your CashOnDay account</p>
         </div>
         
+
         <form method="POST" class="auth-form">
-            <div class="form-floating mb-3">
-                <input type="text" class="form-control" id="username" name="username" placeholder="Username" required>
+            <div class="form-floating mb-3 position-relative animate-slide-in delay-0">
+                <input type="text" class="form-control bg-transparent text-white" id="username" name="username" placeholder="Username" required>
                 <label for="username">Username</label>
+                <i data-feather="user" class="icon-input"></i>
             </div>
             
-            <div class="form-floating mb-3">
-                <input type="password" class="form-control" id="password" name="password" placeholder="Password" required>
+            <div class="form-floating mb-3 position-relative animate-slide-in delay-1">
+                <input type="password" class="form-control bg-transparent text-white" id="password" name="password" placeholder="Password" required>
                 <label for="password">Password</label>
-                <button type="button" class="password-toggle" onclick="togglePassword('password')">
+                <button title="password" type="button" class="btn btn-sm btn-link position-absolute end-0 top-50 translate-middle-y me-2 text-white" onclick="togglePassword('password')">
                     <i data-feather="eye" id="password-eye"></i>
                 </button>
             </div>
             
-            <div class="form-check mb-3">
+            <div class="form-check mb-3 animate-slide-in delay-2">
                 <input class="form-check-input" type="checkbox" value="true" id="remember_me" name="remember_me">
                 <label class="form-check-label" for="remember_me">
-                    Remember me for 30 days
+                    Remember me
                 </label>
             </div>
             
-            <button type="submit" class="btn btn-primary w-100 mb-3">Sign In</button>
+            <button type="submit" class="btn btn-primary w-100 mb-3 animate-slide-in delay-3">Sign In</button>
             
-            <div class="text-center">
-                <a href="{{ url_for('forgot_password') }}" class="text-decoration-none">Forgot your password?</a>
+            <div class="text-center animate-fade-in delay-4">
+                <a href="{{ url_for('forgot_password') }}" class="text-decoration-none text-white-50">Forgot your password?</a>
             </div>
         </form>
-        
-        <div class="auth-footer">
-            <p>Don't have an account? <a href="{{ url_for('register') }}">Sign up</a></p>
+
+        <div class="auth-footer mt-4 text-center animate-fade-in delay-5">
+            <p class="text-white-50">Don’t have an account? 
+                <a href="{{ url_for('register') }}" class="text-white fw-bold">Sign up</a>
+            </p>
         </div>
     </div>
 </div>
 
+<!-- Lottie + Script -->
+<script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
 <script>
-function togglePassword(fieldId) {
-    const field = document.getElementById(fieldId);
-    const eye = document.getElementById(fieldId + '-eye');
-    
-    if (field.type === 'password') {
-        field.type = 'text';
-        eye.setAttribute('data-feather', 'eye-off');
-    } else {
-        field.type = 'password';
-        eye.setAttribute('data-feather', 'eye');
+    function togglePassword(fieldId) {
+        const field = document.getElementById(fieldId);
+        const eye = document.getElementById(fieldId + '-eye');
+        if (field.type === 'password') {
+            field.type = 'text';
+            eye.setAttribute('data-feather', 'eye-off');
+        } else {
+            field.type = 'password';
+            eye.setAttribute('data-feather', 'eye');
+        }
+        feather.replace();
     }
     feather.replace();
-}
+
+    // Animation handling
+    const introAnim = document.getElementById("intro-animation");
+    const loginCard = document.getElementById("login-card");
+
+    setTimeout(() => {
+        introAnim.style.transition = "opacity 1s ease";
+        introAnim.style.opacity = "0";
+        setTimeout(() => {
+            introAnim.style.display = "none";
+            loginCard.classList.remove("d-none");
+            loginCard.classList.add("animate-fade-up");
+        }, 1000);
+    }, 4000);
 </script>
 {% endblock %}

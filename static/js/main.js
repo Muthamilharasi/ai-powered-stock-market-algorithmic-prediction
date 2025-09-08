@@ -140,6 +140,8 @@ class CashOnDayApp {
         document.body.className = document.body.className.replace(/theme-\w+/, '');
         
         if (theme === 'auto') {
+            document.body.classList.toggle("theme-dark");
+
             const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
             theme = prefersDark ? 'dark' : 'light';
         }
@@ -313,25 +315,44 @@ class CashOnDayApp {
     }
 
     // Utility Functions
-    showAlert(type, message, duration = 3000) {
-        const alertDiv = document.createElement('div');
-        alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
-        alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
-        alertDiv.innerHTML = `
-            ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        `;
-        
-        document.body.appendChild(alertDiv);
-        
-        // Auto remove after duration
-        setTimeout(() => {
-            if (alertDiv.parentNode) {
-                alertDiv.remove();
-            }
-        }, duration);
+    // Utility Functions
+showAlert(type, message, duration = 3000) {
+    // Find the order form container specifically
+    const orderForm = document.querySelector('#orderForm');
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    // Insert after the order form or at the top of the card body
+    if (orderForm) {
+        orderForm.parentNode.insertBefore(alertDiv, orderForm.nextSibling);
+    } else {
+        // Fallback: try to find the trading card
+        const tradingCard = document.querySelector('.card-body');
+        if (tradingCard) {
+            tradingCard.insertBefore(alertDiv, tradingCard.firstChild);
+        } else {
+            // Last resort: add to body but with proper styling
+            alertDiv.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+            document.body.appendChild(alertDiv);
+        }
     }
-
+    
+    // Auto remove after duration
+    setTimeout(() => {
+        if (alertDiv.parentNode) {
+            alertDiv.classList.add('fade-out');
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.remove();
+                }
+            }, 500);
+        }
+    }, duration);
+}
     updateConnectionStatus(connected) {
         const statusElements = document.querySelectorAll('.connection-status');
         statusElements.forEach(element => {
@@ -704,3 +725,8 @@ window.addEventListener('beforeunload', function() {
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = CashOnDayApp;
 }
+fetch(`/api/news/${symbol}`)
+  .then(res => res.json())
+  .then(data => {
+      console.log(data.sentiment);  // ✅ instead of data.positive
+  });

@@ -1,11 +1,14 @@
 import os
 import logging
-from telegram import Bot
+import datetime
+from telegram import Bot, Update
+from telegram.ext import Updater, CommandHandler, CallbackContext
 from telegram.error import TelegramError
-
+from dotenv import load_dotenv
+load_dotenv()
 class TelegramBotHandler:
     def __init__(self):
-        self.bot_token = os.getenv("TELEGRAM_TOKEN")
+        self.bot_token = os.environ.get("TELEGRAM_TOKEN")
         self.bot = None
         
         if self.bot_token:
@@ -37,7 +40,7 @@ class TelegramBotHandler:
         message += f"Symbol: {symbol}\n"
         message += f"Current Price: ${current_price:.2f}\n"
         message += f"Condition: {condition}\n"
-        message += f"Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')}"
+        message += f"Time: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')}"
         
         return self.send_alert(chat_id, message)
     
@@ -63,3 +66,30 @@ class TelegramBotHandler:
             return True
         except TelegramError:
             return False
+
+
+# 🔹 New Part: Bot Listener for /start
+def start(update: Update, context: CallbackContext):
+    chat_id = update.effective_chat.id
+    update.message.reply_text(
+        f"👋 Welcome to CashONday!\n\n"
+        f"Your Chat ID is: {chat_id}\n\n"
+        f"➡ Copy this ID and paste it in your app settings."
+    )
+
+def main():
+    token = os.getenv("TELEGRAM_TOKEN")
+    if not token:
+        print("❌ TELEGRAM_TOKEN not set in environment variables")
+        return
+
+    updater = Updater(token, use_context=True)
+    dp = updater.dispatcher
+
+    dp.add_handler(CommandHandler("start", start))
+
+    updater.start_polling()
+    updater.idle()
+
+if __name__ == '__main__':
+    main()

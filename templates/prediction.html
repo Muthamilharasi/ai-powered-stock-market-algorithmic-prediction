@@ -5,10 +5,58 @@
 {% block extra_head %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@2.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+
+<style>
+/* AI Prediction summary scrollable */
+.prediction-summary {
+    max-height: 400px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+/* Equal height for cards in same row */
+.row.mb-4.g-3 {
+    display: flex;
+    gap: 1rem;
+}
+
+/* Make cards flex-fill */
+.card.flex-fill {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Chart canvas full size */
+#priceChart {
+    width: 100% !important;
+    height: 100% !important;
+}
+
+/* Confidence bar colors */
+.progress-bar.bg-success { background-color: #28a745 !important; }
+.progress-bar.bg-warning { background-color: #ffc107 !important; }
+.progress-bar.bg-danger { background-color: #dc3545 !important; }
+
+/* Trend badge colors */
+.badge.bg-success { background-color: #28a745 !important; color: #fff; }
+.badge.bg-danger { background-color: #dc3545 !important; color: #fff; }
+.badge.bg-secondary { background-color: #6c757d !important; color: #fff; }
+
+/* Responsive adjustments */
+@media (max-width: 992px) {
+    .prediction-summary, .card-body {
+        max-height: none;
+        height: auto;
+    }
+}
+</style>
 {% endblock %}
 
 {% block content %}
 <div class="container-fluid p-4">
+
     <!-- Header Section -->
     <div class="row mb-4">
         <div class="col-12">
@@ -23,9 +71,9 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Stock Search Section -->
-    <div class="row mb-4">
+    <div class="row mb-4 g-3">
         <div class="col-lg-6">
             <div class="card">
                 <div class="card-header">
@@ -38,8 +86,7 @@
                                    placeholder="Enter stock symbol (e.g., AAPL, MSFT, TSLA)" 
                                    autocomplete="off">
                             <button class="btn btn-primary" type="submit" id="predictBtn">
-                                <i data-feather="search"></i>
-                                Get Prediction
+                                <i data-feather="search"></i> Get Prediction
                             </button>
                         </div>
                         <small class="text-muted">
@@ -50,7 +97,7 @@
                 </div>
             </div>
         </div>
-        
+
         <div class="col-lg-6">
             <div class="card">
                 <div class="card-header">
@@ -71,7 +118,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Loading Indicator -->
     <div id="loadingIndicator" class="row mb-4" style="display: none;">
         <div class="col-12">
@@ -86,9 +133,10 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Prediction Results -->
     <div id="predictionResults" style="display: none;">
+
         <!-- Stock Info Card -->
         <div class="row mb-4">
             <div class="col-12">
@@ -116,47 +164,42 @@
                 </div>
             </div>
         </div>
-        
-        <!-- Prediction and Chart Row -->
-        <div class="row mb-4">
+
+        <!-- Prediction + Chart Row -->
+        <div class="row mb-4 g-3">
             <!-- AI Prediction Card -->
-            <div class="col-lg-4 mb-4">
-                <div class="card h-100">
+            <div class="col-lg-4 d-flex">
+                <div class="card flex-fill">
                     <div class="card-header">
                         <h5 class="mb-0">AI Prediction</h5>
                     </div>
-                    <div class="card-body">
-                        <div class="prediction-summary">
-                            <div class="prediction-price mb-3">
-                                <p class="text-muted mb-1">Predicted Price (Next Day)</p>
-                                <h2 id="predictedPrice" class="text-primary mb-0"></h2>
+                    <div class="card-body prediction-summary">
+                        <div class="mb-3">
+                            <p class="text-muted mb-1">Predicted Price (Next Day)</p>
+                            <h2 id="predictedPrice" class="text-primary mb-0"></h2>
+                        </div>
+                        <div class="mb-3">
+                            <p class="text-muted mb-1">Expected Change</p>
+                            <h4 id="priceChangePercent" class="mb-0"></h4>
+                        </div>
+                        <div class="mb-3">
+                            <p class="text-muted mb-1">Confidence Level</p>
+                            <div class="progress mb-2">
+                                <div id="confidenceBar" class="progress-bar" role="progressbar"></div>
                             </div>
-                            
-                            <div class="prediction-change mb-3">
-                                <p class="text-muted mb-1">Expected Change</p>
-                                <h4 id="priceChangePercent" class="mb-0"></h4>
-                            </div>
-                            
-                            <div class="confidence-meter mb-3">
-                                <p class="text-muted mb-1">Confidence Level</p>
-                                <div class="progress mb-2">
-                                    <div id="confidenceBar" class="progress-bar" role="progressbar"></div>
-                                </div>
-                                <p id="confidenceText" class="mb-0"></p>
-                            </div>
-                            
-                            <div class="trend-indicator">
-                                <p class="text-muted mb-1">Trend</p>
-                                <span id="trendBadge" class="badge"></span>
-                            </div>
+                            <p id="confidenceText" class="mb-0"></p>
+                        </div>
+                        <div>
+                            <p class="text-muted mb-1">Trend</p>
+                            <span id="trendBadge" class="badge"></span>
                         </div>
                     </div>
                 </div>
             </div>
-            
-            <!-- Price Chart -->
-            <div class="col-lg-8 mb-4">
-                <div class="card h-100">
+
+            <!-- Price Chart Card -->
+            <div class="col-lg-8 d-flex">
+                <div class="card flex-fill">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h5 class="mb-0">Price Chart (1 Year)</h5>
                         <div class="chart-controls">
@@ -164,68 +207,58 @@
                             <button class="btn btn-sm btn-outline-primary" onclick="changeChartType('candlestick')">Candlestick</button>
                         </div>
                     </div>
-                    <div class="card-body">
-                        <canvas id="priceChart" width="400" height="200"></canvas>
+                    <div class="card-body" style="height: 400px;">
+                        <canvas id="priceChart"></canvas>
                     </div>
                 </div>
             </div>
         </div>
-        
-        <!-- Technical Indicators and Explanation -->
-        <div class="row mb-4">
+
+        <!-- Technical Indicators + AI Explanation Row -->
+        <div class="row mb-4 g-3">
             <!-- Technical Indicators -->
-            <div class="col-lg-6 mb-4">
-                <div class="card h-100">
+            <div class="col-lg-6 d-flex">
+                <div class="card flex-fill">
                     <div class="card-header">
                         <h5 class="mb-0">Technical Indicators</h5>
                     </div>
                     <div class="card-body">
                         <div class="technical-indicators">
-                            <div class="indicator-item">
-                                <div class="d-flex justify-content-between">
-                                    <span>RSI (14)</span>
-                                    <span id="rsiValue" class="fw-bold"></span>
-                                </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>RSI (14)</span>
+                                <span id="rsiValue" class="fw-bold"></span>
                             </div>
-                            <div class="indicator-item">
-                                <div class="d-flex justify-content-between">
-                                    <span>SMA (20)</span>
-                                    <span id="sma20Value" class="fw-bold"></span>
-                                </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>SMA (20)</span>
+                                <span id="sma20Value" class="fw-bold"></span>
                             </div>
-                            <div class="indicator-item">
-                                <div class="d-flex justify-content-between">
-                                    <span>SMA (50)</span>
-                                    <span id="sma50Value" class="fw-bold"></span>
-                                </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>SMA (50)</span>
+                                <span id="sma50Value" class="fw-bold"></span>
                             </div>
-                            <div class="indicator-item">
-                                <div class="d-flex justify-content-between">
-                                    <span>P/E Ratio</span>
-                                    <span id="peRatio" class="fw-bold"></span>
-                                </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>P/E Ratio</span>
+                                <span id="peRatio" class="fw-bold"></span>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-            
+
             <!-- AI Explanation -->
-            <div class="col-lg-6 mb-4">
-                <div class="card h-100">
+            <div class="col-lg-6 d-flex">
+                <div class="card flex-fill">
                     <div class="card-header">
                         <h5 class="mb-0">AI Explanation</h5>
                     </div>
-                    <div class="card-body">
-                        <div id="aiExplanation">
-                            <p class="text-muted">AI reasoning will appear here after prediction...</p>
-                        </div>
+                    <div class="card-body" id="aiExplanation">
+                        <p class="text-muted">AI reasoning will appear here after prediction...</p>
                     </div>
                 </div>
             </div>
         </div>
-        
-        <!-- Model Performance -->
+
+        <!-- Model Information -->
         <div class="row">
             <div class="col-12">
                 <div class="card">
@@ -255,8 +288,9 @@
                 </div>
             </div>
         </div>
+
     </div>
-    
+
     <!-- Error Message -->
     <div id="errorMessage" class="row" style="display: none;">
         <div class="col-12">
@@ -270,17 +304,15 @@
             </div>
         </div>
     </div>
-</div>
 
+</div>
 <script>
 let priceChart = null;
 
 document.getElementById('predictionForm').addEventListener('submit', function(e) {
     e.preventDefault();
     const symbol = document.getElementById('stockSymbol').value.trim();
-    if (symbol) {
-        getPrediction(symbol);
-    }
+    if (symbol) getPrediction(symbol);
 });
 
 function searchStock(symbol) {
@@ -292,15 +324,10 @@ async function getPrediction(symbol) {
     showLoading();
     hideError();
     hideResults();
-    
     try {
         const response = await fetch(`/api/stock-data/${symbol}`);
         const data = await response.json();
-        
-        if (!response.ok) {
-            throw new Error(data.error || 'Failed to fetch stock data');
-        }
-        
+        if (!response.ok) throw new Error(data.error || 'Failed to fetch stock data');
         displayPrediction(data);
         showResults();
     } catch (error) {
@@ -311,190 +338,91 @@ async function getPrediction(symbol) {
 }
 
 function displayPrediction(data) {
-    // Update stock info
     document.getElementById('stockSymbolDisplay').textContent = data.symbol;
     document.getElementById('companyName').textContent = data.company_name;
     document.getElementById('currentPrice').textContent = `$${data.current_price}`;
-    
+
     const priceChangeElement = document.getElementById('priceChange');
     const changeClass = data.price_change >= 0 ? 'text-success' : 'text-danger';
     const changeSign = data.price_change >= 0 ? '+' : '';
     priceChangeElement.className = changeClass;
     priceChangeElement.textContent = `${changeSign}$${data.price_change} (${changeSign}${data.price_change_percent}%)`;
-    
+
     document.getElementById('marketCap').textContent = data.market_cap ? formatNumber(data.market_cap) : 'N/A';
     document.getElementById('volume').textContent = formatNumber(data.volume);
-    
-    // Update prediction results
+
     if (data.prediction) {
         document.getElementById('predictedPrice').textContent = `$${data.prediction.predicted_price}`;
-        
+
         const predChangeElement = document.getElementById('priceChangePercent');
         const predChangeClass = data.prediction.price_change_percent >= 0 ? 'text-success' : 'text-danger';
         const predChangeSign = data.prediction.price_change_percent >= 0 ? '+' : '';
         predChangeElement.className = predChangeClass;
         predChangeElement.textContent = `${predChangeSign}${data.prediction.price_change_percent}%`;
-        
-        // Confidence meter
+
         const confidence = data.prediction.confidence;
         document.getElementById('confidenceBar').style.width = `${confidence}%`;
         document.getElementById('confidenceBar').className = `progress-bar ${getConfidenceColor(confidence)}`;
         document.getElementById('confidenceText').textContent = `${confidence}% Confidence`;
-        
-        // Trend indicator
+
         const trendElement = document.getElementById('trendBadge');
         trendElement.textContent = data.prediction.trend;
         trendElement.className = `badge ${getTrendColor(data.prediction.trend)}`;
-        
-        // Model info
+
         document.getElementById('modelAccuracy').textContent = `${data.prediction.model_accuracy}%`;
         document.getElementById('predictionDate').textContent = data.prediction.prediction_date;
-        
-        // AI Explanation
+
         displayExplanation(data.prediction.explanation);
     }
-    
-    // Update technical indicators
+
     document.getElementById('rsiValue').textContent = data.technical_indicators.rsi || 'N/A';
     document.getElementById('sma20Value').textContent = data.technical_indicators.sma_20 ? `$${data.technical_indicators.sma_20}` : 'N/A';
     document.getElementById('sma50Value').textContent = data.technical_indicators.sma_50 ? `$${data.technical_indicators.sma_50}` : 'N/A';
     document.getElementById('peRatio').textContent = data.pe_ratio || 'N/A';
-    
-    // Create chart
+
     createPriceChart(data.chart_data);
 }
 
 function displayExplanation(explanations) {
-    const explanationContainer = document.getElementById('aiExplanation');
-    explanationContainer.innerHTML = '';
-    
-    if (explanations && explanations.length > 0) {
-        explanations.forEach((explanation, index) => {
+    const container = document.getElementById('aiExplanation');
+    container.innerHTML = '';
+    if (explanations && explanations.length) {
+        explanations.forEach((exp, i) => {
             const div = document.createElement('div');
             div.className = 'explanation-item mb-2';
-            div.innerHTML = `
-                <div class="d-flex align-items-start">
-                    <span class="badge bg-primary me-2">${index + 1}</span>
-                    <p class="mb-0">${explanation}</p>
-                </div>
-            `;
-            explanationContainer.appendChild(div);
+            div.innerHTML = `<div class="d-flex align-items-start"><span class="badge bg-primary me-2">${i+1}</span><p class="mb-0">${exp}</p></div>`;
+            container.appendChild(div);
         });
-    } else {
-        explanationContainer.innerHTML = '<p class="text-muted">No explanation available</p>';
-    }
+    } else container.innerHTML = '<p class="text-muted">No explanation available</p>';
 }
 
 function createPriceChart(chartData) {
     const ctx = document.getElementById('priceChart').getContext('2d');
-    
-    if (priceChart) {
-        priceChart.destroy();
-    }
-    
+    if (priceChart) priceChart.destroy();
     priceChart = new Chart(ctx, {
         type: 'line',
         data: {
             labels: chartData.map(d => d.x),
-            datasets: [{
-                label: 'Close Price',
-                data: chartData.map(d => d.close),
-                borderColor: '#0f4c75',
-                backgroundColor: 'rgba(15, 76, 117, 0.1)',
-                borderWidth: 2,
-                fill: true,
-                tension: 0.1
-            }]
+            datasets: [{ label: 'Close Price', data: chartData.map(d => d.close), borderColor: '#0f4c75', backgroundColor: 'rgba(15,76,117,0.1)', borderWidth: 2, fill: true, tension: 0.1 }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            scales: {
-                x: {
-                    type: 'time',
-                    time: {
-                        unit: 'month'
-                    }
-                },
-                y: {
-                    beginAtZero: false,
-                    ticks: {
-                        callback: function(value) {
-                            return '$' + value.toFixed(2);
-                        }
-                    }
-                }
-            },
-            plugins: {
-                legend: {
-                    display: false
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return 'Price: $' + context.parsed.y.toFixed(2);
-                        }
-                    }
-                }
-            }
+            scales: { x: { type: 'time', time: { unit: 'month' } }, y: { beginAtZero: false, ticks: { callback: val => '$' + val.toFixed(2) } } },
+            plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => 'Price: $' + ctx.parsed.y.toFixed(2) } } }
         }
     });
 }
 
-function formatNumber(num) {
-    if (num >= 1e12) return (num / 1e12).toFixed(2) + 'T';
-    if (num >= 1e9) return (num / 1e9).toFixed(2) + 'B';
-    if (num >= 1e6) return (num / 1e6).toFixed(2) + 'M';
-    if (num >= 1e3) return (num / 1e3).toFixed(2) + 'K';
-    return num.toLocaleString();
-}
-
-function getConfidenceColor(confidence) {
-    if (confidence >= 80) return 'bg-success';
-    if (confidence >= 60) return 'bg-warning';
-    return 'bg-danger';
-}
-
-function getTrendColor(trend) {
-    if (trend.includes('Bullish')) return 'bg-success';
-    if (trend.includes('Bearish')) return 'bg-danger';
-    return 'bg-secondary';
-}
-
-function showLoading() {
-    document.getElementById('loadingIndicator').style.display = 'block';
-}
-
-function hideLoading() {
-    document.getElementById('loadingIndicator').style.display = 'none';
-}
-
-function showResults() {
-    document.getElementById('predictionResults').style.display = 'block';
-}
-
-function hideResults() {
-    document.getElementById('predictionResults').style.display = 'none';
-}
-
-function showError(message) {
-    document.getElementById('errorText').textContent = message;
-    document.getElementById('errorMessage').style.display = 'block';
-}
-
-function hideError() {
-    document.getElementById('errorMessage').style.display = 'none';
-}
-
-function changeChartType(type) {
-    // Update active button
-    document.querySelectorAll('.chart-controls .btn').forEach(btn => {
-        btn.classList.remove('active');
-    });
-    event.target.classList.add('active');
-    
-    // Chart type changing would require more complex implementation
-    // For now, just show the line chart
-}
+function formatNumber(num) { if (num >= 1e12) return (num/1e12).toFixed(2)+'T'; if (num>=1e9) return (num/1e9).toFixed(2)+'B'; if (num>=1e6) return (num/1e6).toFixed(2)+'M'; if (num>=1e3) return (num/1e3).toFixed(2)+'K'; return num.toLocaleString(); }
+function getConfidenceColor(conf) { if (conf>=80) return 'bg-success'; if (conf>=60) return 'bg-warning'; return 'bg-danger'; }
+function getTrendColor(trend) { if (trend.includes('Bullish')) return 'bg-success'; if (trend.includes('Bearish')) return 'bg-danger'; return 'bg-secondary'; }
+function showLoading() { document.getElementById('loadingIndicator').style.display='block'; }
+function hideLoading() { document.getElementById('loadingIndicator').style.display='none'; }
+function showResults() { document.getElementById('predictionResults').style.display='block'; }
+function hideResults() { document.getElementById('predictionResults').style.display='none'; }
+function showError(msg) { document.getElementById('errorText').textContent=msg; document.getElementById('errorMessage').style.display='block'; }
+function hideError() { document.getElementById('errorMessage').style.display='none'; }
+function changeChartType(type) { document.querySelectorAll('.chart-controls .btn').forEach(btn => btn.classList.remove('active')); event.target.classList.add('active'); }
 </script>
 {% endblock %}

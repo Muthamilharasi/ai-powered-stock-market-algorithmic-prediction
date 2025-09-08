@@ -82,7 +82,7 @@
         <!-- Top Navigation -->
         <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom">
             <div class="container-fluid">
-                <button class="btn btn-light" type="button" onclick="toggleSidebar()">
+                <button title="togglesidebar" class="btn btn-light" type="button" onclick="toggleSidebar()">
                     <i data-feather="menu"></i>
                 </button>
                 
@@ -111,7 +111,7 @@
                     {% for category, message in messages %}
                         <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
                             {{ message }}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            <button title="alerts" type="button" class="btn-close" data-bs-dismiss="alert"></button>
                         </div>
                     {% endfor %}
                 </div>
@@ -146,6 +146,8 @@
             mainContent.classList.toggle('sidebar-open');
         }
     </script>
+    <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
+
 
     {% block extra_scripts %}{% endblock %}
 </body>
