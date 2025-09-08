@@ -72,6 +72,9 @@ telegram_handler = TelegramBotHandler()
 
 # ------------------ HELPERS ------------------
 def send_email(to_email, subject, body):
+ with app.app_context():
+    # your code here
+
     """Send email for password reset"""
     try:
         # Check if email modules are available
