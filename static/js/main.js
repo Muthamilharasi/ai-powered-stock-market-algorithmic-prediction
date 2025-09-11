@@ -23,7 +23,7 @@ class CashOnDayApp {
     initializeSocket() {
         if (typeof io !== 'undefined') {
             this.socket = io();
-            
+
             this.socket.on('connect', () => {
                 console.log('Connected to server');
                 this.updateConnectionStatus(true);
@@ -138,17 +138,17 @@ class CashOnDayApp {
     setTheme(theme) {
         this.currentTheme = theme;
         document.body.className = document.body.className.replace(/theme-\w+/, '');
-        
+
         if (theme === 'auto') {
             document.body.classList.toggle("theme-dark");
 
             const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
             theme = prefersDark ? 'dark' : 'light';
         }
-        
+
         document.body.classList.add(`theme-${theme}`);
         localStorage.setItem('cashonday-theme', this.currentTheme);
-        
+
         // Update theme radio button
         const themeInput = document.querySelector(`input[name="theme"][value="${this.currentTheme}"]`);
         if (themeInput) {
@@ -160,7 +160,7 @@ class CashOnDayApp {
     setupSidebar() {
         const sidebar = document.getElementById('sidebar');
         const mainContent = document.querySelector('.main-content');
-        
+
         if (!sidebar || !mainContent) return;
 
         // Close sidebar when clicking outside on mobile
@@ -187,7 +187,7 @@ class CashOnDayApp {
     toggleSidebar() {
         const sidebar = document.getElementById('sidebar');
         const mainContent = document.querySelector('.main-content');
-        
+
         if (sidebar && mainContent) {
             sidebar.classList.toggle('active');
             mainContent.classList.toggle('sidebar-open');
@@ -198,12 +198,12 @@ class CashOnDayApp {
     initializeFeatherIcons() {
         if (typeof feather !== 'undefined') {
             feather.replace();
-            
+
             // Re-initialize icons when content changes
             const observer = new MutationObserver(() => {
                 feather.replace();
             });
-            
+
             observer.observe(document.body, {
                 childList: true,
                 subtree: true
@@ -228,7 +228,7 @@ class CashOnDayApp {
 
     validateForm(event) {
         const form = event.target;
-        
+
         // Custom validations
         const passwordInputs = form.querySelectorAll('input[type="password"]');
         if (passwordInputs.length === 2) {
@@ -288,7 +288,7 @@ class CashOnDayApp {
         const { price, change_percent } = priceData;
         const changeClass = change_percent >= 0 ? 'text-success' : 'text-danger';
         const changeSign = change_percent >= 0 ? '+' : '';
-        
+
         if (element.dataset.displayType === 'price-only') {
             element.textContent = `$${price.toFixed(2)}`;
         } else {
@@ -297,7 +297,7 @@ class CashOnDayApp {
                 <small class="${changeClass}">${changeSign}${change_percent.toFixed(2)}%</small>
             `;
         }
-        
+
         element.classList.remove('text-success', 'text-danger');
         element.classList.add(changeClass);
     }
@@ -305,54 +305,49 @@ class CashOnDayApp {
     handleTradeUpdate(data) {
         // Update portfolio values
         this.updatePortfolioDisplay(data);
-        
+
         // Show notification
         const message = `Trade executed: ${data.side} ${data.quantity} ${data.symbol} at $${data.price}`;
         this.showAlert('success', message);
-        
+
         // Update trade history if visible
         this.updateTradeHistory(data);
     }
 
     // Utility Functions
-    // Utility Functions
-showAlert(type, message, duration = 3000) {
-    // Find the order form container specifically
-    const orderForm = document.querySelector('#orderForm');
-    const alertDiv = document.createElement('div');
-    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
-    alertDiv.innerHTML = `
-        ${message}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    `;
-    
-    // Insert after the order form or at the top of the card body
-    if (orderForm) {
-        orderForm.parentNode.insertBefore(alertDiv, orderForm.nextSibling);
-    } else {
-        // Fallback: try to find the trading card
-        const tradingCard = document.querySelector('.card-body');
-        if (tradingCard) {
-            tradingCard.insertBefore(alertDiv, tradingCard.firstChild);
+    showAlert(type, message, duration = 3000) {
+        const orderForm = document.querySelector('#orderForm');
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+        alertDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+
+        if (orderForm) {
+            orderForm.parentNode.insertBefore(alertDiv, orderForm.nextSibling);
         } else {
-            // Last resort: add to body but with proper styling
-            alertDiv.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
-            document.body.appendChild(alertDiv);
+            const tradingCard = document.querySelector('.card-body');
+            if (tradingCard) {
+                tradingCard.insertBefore(alertDiv, tradingCard.firstChild);
+            } else {
+                alertDiv.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+                document.body.appendChild(alertDiv);
+            }
         }
+
+        setTimeout(() => {
+            if (alertDiv.parentNode) {
+                alertDiv.classList.add('fade-out');
+                setTimeout(() => {
+                    if (alertDiv.parentNode) {
+                        alertDiv.remove();
+                    }
+                }, 500);
+            }
+        }, duration);
     }
-    
-    // Auto remove after duration
-    setTimeout(() => {
-        if (alertDiv.parentNode) {
-            alertDiv.classList.add('fade-out');
-            setTimeout(() => {
-                if (alertDiv.parentNode) {
-                    alertDiv.remove();
-                }
-            }, 500);
-        }
-    }, duration);
-}
+
     updateConnectionStatus(connected) {
         const statusElements = document.querySelectorAll('.connection-status');
         statusElements.forEach(element => {
@@ -367,7 +362,6 @@ showAlert(type, message, duration = 3000) {
                 this.showAlert('success', 'Copied to clipboard!', 1500);
             });
         } else {
-            // Fallback for older browsers
             const textArea = document.createElement('textarea');
             textArea.value = text;
             textArea.style.position = 'fixed';
@@ -376,14 +370,14 @@ showAlert(type, message, duration = 3000) {
             document.body.appendChild(textArea);
             textArea.focus();
             textArea.select();
-            
+
             try {
                 document.execCommand('copy');
                 this.showAlert('success', 'Copied to clipboard!', 1500);
             } catch (err) {
                 this.showAlert('danger', 'Failed to copy to clipboard');
             }
-            
+
             textArea.remove();
         }
     }
@@ -424,7 +418,6 @@ showAlert(type, message, duration = 3000) {
     updateVisibleCharts(data) {
         this.charts.forEach((chart, chartId) => {
             if (chart && typeof chart.update === 'function') {
-                // Update chart data if the symbol matches
                 const symbol = chart.config?.data?.datasets?.[0]?.symbol;
                 if (symbol && data[symbol]) {
                     this.updateChartData(chart, data[symbol]);
@@ -436,40 +429,34 @@ showAlert(type, message, duration = 3000) {
     updateChartData(chart, priceData) {
         const now = new Date();
         const dataset = chart.data.datasets[0];
-        
-        // Add new data point
+
         dataset.data.push({
             x: now,
             y: priceData.price
         });
-        
-        // Keep only last 50 points
+
         if (dataset.data.length > 50) {
             dataset.data.shift();
         }
-        
+
         chart.update('none');
     }
 
     // Tab Management
     switchTab(targetId) {
-        // Hide all tab panes
         document.querySelectorAll('.tab-pane').forEach(pane => {
             pane.classList.remove('active', 'show');
         });
-        
-        // Remove active class from all tab buttons
+
         document.querySelectorAll('.nav-link').forEach(link => {
             link.classList.remove('active');
         });
-        
-        // Show target tab pane
+
         const targetPane = document.getElementById(targetId);
         if (targetPane) {
             targetPane.classList.add('active', 'show');
         }
-        
-        // Add active class to clicked button
+
         const activeButton = document.querySelector(`[data-tab-target="${targetId}"]`);
         if (activeButton) {
             activeButton.classList.add('active');
@@ -481,7 +468,7 @@ showAlert(type, message, duration = 3000) {
         if (enabled) {
             this.priceUpdateInterval = setInterval(() => {
                 this.refreshPrices();
-            }, 30000); // Refresh every 30 seconds
+            }, 30000);
         } else {
             if (this.priceUpdateInterval) {
                 clearInterval(this.priceUpdateInterval);
@@ -493,12 +480,12 @@ showAlert(type, message, duration = 3000) {
     async refreshPrices() {
         const symbolElements = document.querySelectorAll('[data-symbol]');
         const symbols = Array.from(new Set(Array.from(symbolElements).map(el => el.dataset.symbol)));
-        
+
         for (const symbol of symbols) {
             try {
                 const response = await fetch(`/api/stock-data/${symbol}`);
                 const data = await response.json();
-                
+
                 if (response.ok) {
                     const elements = document.querySelectorAll(`[data-symbol="${symbol}"]`);
                     elements.forEach(element => {
@@ -514,7 +501,7 @@ showAlert(type, message, duration = 3000) {
     // Search functionality
     handleSearch(query, searchType) {
         if (!query) return;
-        
+
         switch (searchType) {
             case 'stock':
                 this.searchStocks(query);
@@ -531,7 +518,7 @@ showAlert(type, message, duration = 3000) {
         try {
             const response = await fetch(`/api/search-stocks?q=${encodeURIComponent(query)}`);
             const results = await response.json();
-            
+
             if (response.ok) {
                 this.displaySearchResults('stock', results);
             }
@@ -543,16 +530,16 @@ showAlert(type, message, duration = 3000) {
     displaySearchResults(type, results) {
         const resultsContainer = document.querySelector(`[data-search-results="${type}"]`);
         if (!resultsContainer) return;
-        
+
         resultsContainer.innerHTML = '';
-        
+
         results.forEach(result => {
             const resultElement = document.createElement('div');
             resultElement.className = 'search-result-item';
             resultElement.innerHTML = this.formatSearchResult(type, result);
             resultsContainer.appendChild(resultElement);
         });
-        
+
         resultsContainer.style.display = results.length > 0 ? 'block' : 'none';
     }
 
@@ -596,7 +583,7 @@ showAlert(type, message, duration = 3000) {
     updateTradeHistory(tradeData) {
         const historyContainer = document.querySelector('#tradeHistory tbody');
         if (!historyContainer) return;
-        
+
         const row = document.createElement('tr');
         row.innerHTML = `
             <td>${new Date(tradeData.executed_at).toLocaleDateString()}</td>
@@ -607,10 +594,9 @@ showAlert(type, message, duration = 3000) {
             <td>$${tradeData.total_amount.toFixed(2)}</td>
             <td><span class="badge bg-info">${tradeData.status}</span></td>
         `;
-        
+
         historyContainer.insertBefore(row, historyContainer.firstChild);
-        
-        // Keep only last 20 rows
+
         const rows = historyContainer.querySelectorAll('tr');
         if (rows.length > 20) {
             rows[rows.length - 1].remove();
@@ -635,28 +621,27 @@ showAlert(type, message, duration = 3000) {
         if (this.socket) {
             this.socket.disconnect();
         }
-        
+
         if (this.priceUpdateInterval) {
             clearInterval(this.priceUpdateInterval);
         }
-        
+
         this.charts.forEach(chart => {
             if (chart && typeof chart.destroy === 'function') {
                 chart.destroy();
             }
         });
-        
+
         this.charts.clear();
     }
 }
 
 // Global utility functions
 window.CashOnDay = {
-    // Password toggle function (used in templates)
     togglePassword: function(fieldId) {
         const field = document.getElementById(fieldId);
         const eye = document.getElementById(fieldId + '-eye');
-        
+
         if (field && eye) {
             if (field.type === 'password') {
                 field.type = 'text';
@@ -665,14 +650,13 @@ window.CashOnDay = {
                 field.type = 'password';
                 eye.setAttribute('data-feather', 'eye');
             }
-            
+
             if (typeof feather !== 'undefined') {
                 feather.replace();
             }
         }
     },
 
-    // Format number for display
     formatNumber: function(num) {
         if (typeof num !== 'number') return num;
         if (num >= 1e12) return (num / 1e12).toFixed(2) + 'T';
@@ -682,7 +666,6 @@ window.CashOnDay = {
         return num.toLocaleString();
     },
 
-    // Show confirmation dialog
     confirm: function(message, callback) {
         if (confirm(message)) {
             if (typeof callback === 'function') {
@@ -691,7 +674,6 @@ window.CashOnDay = {
         }
     },
 
-    // Debounce function
     debounce: function(func, wait) {
         let timeout;
         return function executedFunction(...args) {
@@ -708,8 +690,7 @@ window.CashOnDay = {
 // Initialize the application when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
     window.cashOnDayApp = new CashOnDayApp();
-    
-    // Make globally available for backward compatibility
+
     window.toggleSidebar = () => window.cashOnDayApp.toggleSidebar();
     window.togglePassword = CashOnDay.togglePassword;
 });
@@ -721,12 +702,13 @@ window.addEventListener('beforeunload', function() {
     }
 });
 
-// Export for module systems
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = CashOnDayApp;
 }
-fetch(`/api/news/${symbol}`)
-  .then(res => res.json())
-  .then(data => {
-      console.log(data.sentiment);  // ✅ instead of data.positive
-  });
+document.querySelectorAll('.alert').forEach(alert => {
+  // Display alert for 4 seconds then fade out over 0.5s and remove
+  setTimeout(() => {
+    alert.classList.add('fade-out');
+    setTimeout(() => alert.remove(), 500);
+  }, 4000);
+});

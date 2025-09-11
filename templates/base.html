@@ -50,24 +50,14 @@
                     <span>Market News</span>
                 </a>
             </li>
-            <li class="nav-item">
-                <a href="{{ url_for('alerts') }}" class="nav-link {% if request.endpoint == 'alerts' %}active{% endif %}">
-                    <i data-feather="bell"></i>
-                    <span>Alerts</span>
-                </a>
-            </li>
+            
             <li class="nav-item">
                 <a href="{{ url_for('profile') }}" class="nav-link {% if request.endpoint == 'profile' %}active{% endif %}">
                     <i data-feather="user"></i>
                     <span>Profile</span>
                 </a>
             </li>
-            <li class="nav-item">
-                <a href="{{ url_for('settings') }}" class="nav-link {% if request.endpoint == 'settings' %}active{% endif %}">
-                    <i data-feather="settings"></i>
-                    <span>Settings</span>
-                </a>
-            </li>
+            <!-- Removed Settings link here -->
             <li class="nav-item mt-auto">
                 <a href="{{ url_for('logout') }}" class="nav-link text-danger">
                     <i data-feather="log-out"></i>
@@ -94,7 +84,7 @@
                         </a>
                         <ul class="dropdown-menu">
                             <li><a class="dropdown-item" href="{{ url_for('profile') }}">Profile</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('settings') }}">Settings</a></li>
+                            <!-- Removed Settings link here -->
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="{{ url_for('logout') }}">Logout</a></li>
                         </ul>
@@ -147,7 +137,6 @@
         }
     </script>
     <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
-
 
     {% block extra_scripts %}{% endblock %}
 </body>
