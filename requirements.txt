@@ -2,6 +2,7 @@
      flask-bcrypt>=1.0.1,
      flask>=3.1.2,
     flask-sqlalchemy>=3.1.1,
+    evenlet,
     gunicorn>=23.0.0,
     numpy>=2.3.2,
     pandas>=2.3.2,
