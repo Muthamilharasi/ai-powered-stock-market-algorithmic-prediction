@@ -16,6 +16,5 @@
     plotly>=6.3.0
     sqlalchemy>=2.0.43
     transformers
-    torch
-    sentencepiece
+   
     
