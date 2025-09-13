@@ -44,7 +44,6 @@ class Base(DeclarativeBase):
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET")
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
 socketio = SocketIO(app, async_mode="eventlet")
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
@@ -55,7 +54,7 @@ db.init_app(app)
 
 # Extensions
 bcrypt = Bcrypt(app)
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
+#socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
 
 # Trading engines
 trading_engine = PaperTradingEngine(db)
