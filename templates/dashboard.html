@@ -89,9 +89,10 @@
                         <div class="watchlist-item">
                             <div class="stock-info">
                                 <strong>{{ stock.symbol }}</strong>
-                                <span class="text-muted">${{ "%.2f"|format(stock.price) }}</span>
+                                <!-- add ID for updating dynamically -->
+                                <span id="price-{{ stock.symbol }}" class="text-muted">${{ "%.2f"|format(stock.price) }}</span>
                             </div>
-                            <div class="stock-change {% if stock.change >= 0 %}text-success{% else %}text-danger{% endif %}">
+                            <div id="change-{{ stock.symbol }}" class="stock-change {% if stock.change >= 0 %}text-success{% else %}text-danger{% endif %}">
                                 {% if stock.change >= 0 %}+{% endif %}{{ "%.2f"|format(stock.change) }}%
                             </div>
                         </div>
@@ -154,9 +155,9 @@
                                     <td><strong>{{ position.symbol }}</strong></td>
                                     <td>{{ position.quantity }}</td>
                                     <td>${{ "%.2f"|format(position.avg_price) }}</td>
-                                    <td>${{ "%.2f"|format(position.current_price) }}</td>
-                                    <td>${{ "%.2f"|format(position.market_value) }}</td>
-                                    <td class="{% if position.unrealized_pnl >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                    <td id="pos-price-{{ position.symbol }}">${{ "%.2f"|format(position.current_price) }}</td>
+                                    <td id="pos-value-{{ position.symbol }}">${{ "%.2f"|format(position.market_value) }}</td>
+                                    <td id="pos-pnl-{{ position.symbol }}" class="{% if position.unrealized_pnl >= 0 %}text-success{% else %}text-danger{% endif %}">
                                         {% if position.unrealized_pnl >= 0 %}+{% endif %} ${{ "%.2f"|format(position.unrealized_pnl) }}
                                     </td>
                                     <td>
@@ -205,22 +206,26 @@
 </div>
 
 <script>
-function refreshWatchlist() {
-    location.reload();
+function refreshRealtimePrices() {
+    fetch("/api/realtime-prices")
+        .then(response => response.json())
+        .then(data => {
+            console.log("📈 Latest prices:", data);
+
+            for (const [symbol, info] of Object.entries(data)) {
+                if (!info.price) continue; // skip if None
+
+                let priceEl = document.getElementById(`price-${symbol}`);
+                if (priceEl) priceEl.textContent = `$${info.price.toFixed(2)}`;
+
+                let posPriceEl = document.getElementById(`pos-price-${symbol}`);
+                if (posPriceEl) posPriceEl.textContent = `$${info.price.toFixed(2)}`;
+            }
+        })
+        .catch(err => console.error("Error fetching realtime prices:", err));
 }
 
-function sellPosition(symbol, quantity) {
-    if (confirm(`Are you sure you want to sell all ${quantity} shares of ${symbol}?`)) {
-        // Implement sell functionality
-        window.location.href = `{{ url_for('trading') }}?action=sell&symbol=${symbol}&quantity=${quantity}`;
-    }
-}
-
-// Real-time updates
-const socket = io();
-socket.on('price_update', function(data) {
-    // Update watchlist prices in real-time
-    console.log('Price update received:', data);
-});
 </script>
+
+
 {% endblock %}

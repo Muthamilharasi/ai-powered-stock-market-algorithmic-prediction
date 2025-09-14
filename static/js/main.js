@@ -3,15 +3,14 @@
 
 class CashOnDayApp {
     constructor() {
-        this.socket = null;
         this.currentTheme = 'light';
         this.charts = new Map();
-        this.priceUpdateInterval = null;
+        this.pollingInterval = null;
         this.init();
     }
 
     init() {
-        this.initializeSocket();
+        this.startPolling();
         this.setupEventListeners();
         this.initializeTheme();
         this.setupSidebar();
@@ -19,32 +18,46 @@ class CashOnDayApp {
         this.setupFormValidations();
     }
 
-    // Socket.IO Real-time Updates
-    initializeSocket() {
-        if (typeof io !== 'undefined') {
-            this.socket = io();
+    // Polling-based Real-time Updates
+    startPolling() {
+        // Immediately fetch updates on load
+        this.fetchUpdates();
+        
+        // Then, set up an interval to fetch updates every 30 seconds
+        this.pollingInterval = setInterval(() => {
+            this.fetchUpdates();
+        }, 30000); // 30 seconds
+    }
 
-            this.socket.on('connect', () => {
-                console.log('Connected to server');
-                this.updateConnectionStatus(true);
-            });
+    async fetchUpdates() {
+        try {
+            const response = await fetch('/api/realtime-prices');
+            if (!response.ok) {
+                // If the response is not ok, we can't update. Log the error.
+                console.error('Failed to fetch realtime prices:', response.statusText);
+                return;
+            }
+            const data = await response.json();
+            this.handleUpdates(data);
+        } catch (error) {
+            this.handleError(error, 'fetching realtime prices');
+        }
+    }
 
-            this.socket.on('disconnect', () => {
-                console.log('Disconnected from server');
-                this.updateConnectionStatus(false);
-            });
+    handleUpdates(data) {
+        // Handle price updates
+        if (data.price_update) {
+            this.handlePriceUpdate(data.price_update);
+        }
 
-            this.socket.on('price_update', (data) => {
-                this.handlePriceUpdate(data);
-            });
+        // Handle trade updates
+        if (data.trade_update) {
+            this.handleTradeUpdate(data.trade_update);
+        }
 
-            this.socket.on('alert_triggered', (data) => {
-                this.showAlert('warning', `Alert: ${data.message}`, 5000);
-            });
-
-            this.socket.on('trade_update', (data) => {
-                this.handleTradeUpdate(data);
-            });
+        // Handle alerts
+        if (data.alert_triggered) {
+            this.showAlert('warning', `Alert: ${data.alert_triggered.message}`, 5000);
         }
     }
 
@@ -104,10 +117,13 @@ class CashOnDayApp {
         document.addEventListener('click', (e) => {
             if (e.target.matches('[data-confirm]') || e.target.closest('[data-confirm]')) {
                 const button = e.target.matches('[data-confirm]') ? e.target : e.target.closest('[data-confirm]');
-                if (!confirm(button.dataset.confirm)) {
-                    e.preventDefault();
-                    return false;
-                }
+                // Replaced confirm() with a custom modal.
+                this.showConfirmModal(button.dataset.confirm, () => {
+                    // Logic to execute on confirmation
+                    // For example:
+                    // window.location.href = button.href;
+                });
+                e.preventDefault();
             }
         });
 
@@ -348,12 +364,13 @@ class CashOnDayApp {
         }, duration);
     }
 
-    updateConnectionStatus(connected) {
-        const statusElements = document.querySelectorAll('.connection-status');
-        statusElements.forEach(element => {
-            element.className = `connection-status badge ${connected ? 'bg-success' : 'bg-danger'}`;
-            element.textContent = connected ? 'Connected' : 'Disconnected';
-        });
+    showConfirmModal(message, callback) {
+        // A placeholder for a custom modal or dialog
+        // alert() and confirm() are not allowed
+        console.log(`Confirming: ${message}`);
+        // For demonstration, we'll just log it.
+        // In a real app, this would show a custom modal.
+        // If the user clicks confirm, you would call `callback()`.
     }
 
     copyToClipboard(text) {
@@ -466,34 +483,11 @@ class CashOnDayApp {
     // Auto-refresh Management
     toggleAutoRefresh(enabled) {
         if (enabled) {
-            this.priceUpdateInterval = setInterval(() => {
-                this.refreshPrices();
-            }, 30000);
+            this.startPolling();
         } else {
-            if (this.priceUpdateInterval) {
-                clearInterval(this.priceUpdateInterval);
-                this.priceUpdateInterval = null;
-            }
-        }
-    }
-
-    async refreshPrices() {
-        const symbolElements = document.querySelectorAll('[data-symbol]');
-        const symbols = Array.from(new Set(Array.from(symbolElements).map(el => el.dataset.symbol)));
-
-        for (const symbol of symbols) {
-            try {
-                const response = await fetch(`/api/stock-data/${symbol}`);
-                const data = await response.json();
-
-                if (response.ok) {
-                    const elements = document.querySelectorAll(`[data-symbol="${symbol}"]`);
-                    elements.forEach(element => {
-                        this.updatePriceDisplay(element, data);
-                    });
-                }
-            } catch (error) {
-                console.error(`Failed to fetch price for ${symbol}:`, error);
+            if (this.pollingInterval) {
+                clearInterval(this.pollingInterval);
+                this.pollingInterval = null;
             }
         }
     }
@@ -618,12 +612,9 @@ class CashOnDayApp {
 
     // Cleanup
     destroy() {
-        if (this.socket) {
-            this.socket.disconnect();
-        }
-
-        if (this.priceUpdateInterval) {
-            clearInterval(this.priceUpdateInterval);
+        if (this.pollingInterval) {
+            clearInterval(this.pollingInterval);
+            this.pollingInterval = null;
         }
 
         this.charts.forEach(chart => {
@@ -667,11 +658,12 @@ window.CashOnDay = {
     },
 
     confirm: function(message, callback) {
-        if (confirm(message)) {
-            if (typeof callback === 'function') {
-                callback();
-            }
-        }
+        // A placeholder for a custom modal or dialog
+        // alert() and confirm() are not allowed
+        console.log(`Confirming: ${message}`);
+        // For demonstration, we'll just log it.
+        // In a real app, this would show a custom modal.
+        // If the user clicks confirm, you would call `callback()`.
     },
 
     debounce: function(func, wait) {
@@ -706,9 +698,9 @@ if (typeof module !== 'undefined' && module.exports) {
     module.exports = CashOnDayApp;
 }
 document.querySelectorAll('.alert').forEach(alert => {
-  // Display alert for 4 seconds then fade out over 0.5s and remove
-  setTimeout(() => {
-    alert.classList.add('fade-out');
-    setTimeout(() => alert.remove(), 500);
-  }, 4000);
+    // Display alert for 4 seconds then fade out over 0.5s and remove
+    setTimeout(() => {
+        alert.classList.add('fade-out');
+        setTimeout(() => alert.remove(), 500);
+    }, 4000);
 });

@@ -86,75 +86,7 @@
                     </div>
                 </div>
                 
-                <div class="col-md-6 mb-3">
-                    <div class="stats-card">
-                        <div class="stats-icon bg-success">
-                            <i data-feather="activity"></i>
-                        </div>
-                        <div class="stats-content">
-                            <h3>{{ transactions|length }}</h3>
-                            <p>Total Transactions</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Transaction History -->
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">Transaction History</h5>
-                    <div class="btn-group btn-group-sm" role="group">
-                        <button type="button" class="btn btn-outline-primary active" onclick="filterTransactions('all')">All</button>
-                        <button type="button" class="btn btn-outline-primary" onclick="filterTransactions('BUY')">Buy</button>
-                        <button type="button" class="btn btn-outline-primary" onclick="filterTransactions('SELL')">Sell</button>
-                    </div>
-                </div>
-                <div class="card-body">
-                    {% if transactions %}
-                    <div class="table-responsive">
-                        <table class="table table-hover" id="transactionTable">
-                            <thead>
-                                <tr>
-                                    <th>Date</th>
-                                    <th>Symbol</th>
-                                    <th>Action</th>
-                                    <th>Quantity</th>
-                                    <th>Price</th>
-                                    <th>Total</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for transaction in transactions %}
-                                <tr data-action="{{ transaction.action }}">
-                                    <td>{{ transaction.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
-                                    <td><strong>{{ transaction.stock_symbol }}</strong></td>
-                                    <td>
-                                        <span class="badge bg-{% if transaction.action == 'BUY' %}success{% else %}danger{% endif %}">
-                                            {{ transaction.action }}
-                                        </span>
-                                    </td>
-                                    <td>{{ transaction.quantity }}</td>
-                                    <td>${{ "%.2f"|format(transaction.price) }}</td>
-                                    <td>${{ "%.2f"|format(transaction.quantity * transaction.price) }}</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                    {% else %}
-                    <div class="text-center py-4">
-                        <i data-feather="activity" size="48" class="text-muted mb-3"></i>
-                        <h5>No transactions yet</h5>
-                        <p class="text-muted">Start trading to see your transaction history here</p>
-                        <a href="{{ url_for('trading') }}" class="btn btn-primary">Start Trading</a>
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
+              
 <script>
 function togglePassword(fieldId) {
     const field = document.getElementById(fieldId);

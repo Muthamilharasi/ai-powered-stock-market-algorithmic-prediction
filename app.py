@@ -1,6 +1,7 @@
 import os
 import re
 import time
+import math
 import json
 import random
 import logging
@@ -11,10 +12,9 @@ import numpy as np
 import pandas as pd
 import yfinance as yf
 import plotly.graph_objs as go
-from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, Response
 from flask_bcrypt import Bcrypt
 from flask_sqlalchemy import SQLAlchemy
-from flask_socketio import SocketIO, emit, join_room, leave_room
 from werkzeug.middleware.proxy_fix import ProxyFix
 from dotenv import load_dotenv
 from sqlalchemy.orm import DeclarativeBase
@@ -44,7 +44,6 @@ class Base(DeclarativeBase):
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET")
-#socketio= SocketIO(app, cors_allowed_origins="*", async_mode="eventlet")
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
 # Database
@@ -54,12 +53,14 @@ db.init_app(app)
 
 # Extensions
 bcrypt = Bcrypt(app)
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
 
 # Trading engines
 trading_engine = PaperTradingEngine(db)
 stock_simulator = StockSimulator()
 predictor = StockPredictor()
+
+# Global variable to hold the latest price updates from the background task
+latest_prices = {}
 
 # ------------------ HELPERS ------------------
 def send_email(to_email, subject, body):
@@ -119,7 +120,6 @@ def check_alerts():
 
             if eval(f"{current_price} {operator} {value}"):
                 user = User.query.get(alert.user_id)
-                # Telegram logic removed
                 alert.status = "Triggered"
                 db.session.commit()
         except Exception as e:
@@ -171,7 +171,7 @@ def login():
             flash("Welcome back!", "success")
             next_page = request.args.get('next')
             return redirect(next_page) if next_page else redirect(url_for('dashboard'))
-        flash("Invalid credentials.", "danger")
+    
     return render_template('login.html')
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -665,33 +665,56 @@ def delete_alert(alert_id):
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
 
-# ------------------ WEBSOCKET EVENTS ------------------
-@socketio.on('connect')
-def handle_connect():
-    if 'user_id' in session:
-        join_room(f"user_{session['user_id']}")
-        emit('status', {'msg': 'Connected to real-time updates'})
-
-@socketio.on('disconnect')
-def handle_disconnect():
-    if 'user_id' in session:
-        leave_room(f"user_{session['user_id']}")
-
-# ------------------ BACKGROUND TASKS ------------------
+# ------------------ BACKGROUND TASKS AND DATA API ------------------
 def background_tasks():
+    global latest_prices
     while True:
         with app.app_context():
             try:
                 stock_simulator.update_prices()
-                check_alerts()  # uses db.session
-                prices = stock_simulator.get_all_prices()
-                socketio.emit('price_update', prices, room='prices')
+                check_alerts()
+                latest_prices = stock_simulator.get_all_prices()
             except Exception as e:
                 logging.error(f"Background task error: {e}")
         time.sleep(30)
 
-# Start background thread
+@app.route("/api/realtime-prices")
+def realtime_prices():
+    symbols = ["AAPL", "GOOGL", "AMZN", "CRM", "ADBE"]
+    prices = {}
 
+    for symbol in symbols:
+        ticker = yf.Ticker(symbol)
+
+        # Try intraday (1-minute) data first
+        data = ticker.history(period="1d", interval="1m")
+
+        if not data.empty:
+            last_row = data.iloc[-1]
+            close_price = last_row["Close"]
+            open_price = last_row["Open"]
+        else:
+            close_price, open_price = None, None
+
+        # Fallback: if invalid, use 1-day data (yesterday's close)
+        if close_price is None or math.isnan(close_price):
+            day_data = ticker.history(period="2d", interval="1d")
+            if not day_data.empty:
+                close_price = day_data["Close"].iloc[-1]
+                open_price = day_data["Open"].iloc[-1]
+
+        # Final safety: replace with None if still NaN
+        price = float(close_price) if close_price is not None and not math.isnan(close_price) else None
+        change = (
+            float(close_price - open_price)
+            if (close_price is not None and open_price is not None and not math.isnan(close_price) and not math.isnan(open_price))
+            else None
+        )
+
+        prices[symbol] = {"price": price, "change": change}
+
+    return jsonify(prices)
+# Start background thread
 if __name__ == "__main__":
     background_thread = threading.Thread(target=background_tasks)
     background_thread.daemon = True
@@ -701,5 +724,5 @@ if __name__ == "__main__":
         db.create_all()
 
     # Render will set PORT env automatically
-    port = int(os.environ.get("PORT", 5000))
-    socketio.run(app, host="0.0.0.0", port=port, debug=False)
+    port = int(os.environ.get("PORT", 8000))
+    app.run(host="0.0.0.0", port=port, debug=False)
