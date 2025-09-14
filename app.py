@@ -44,7 +44,7 @@ class Base(DeclarativeBase):
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET")
-socketio= SocketIO(app, cors_allowed_origins="*", async_mode="eventlet")
+#socketio= SocketIO(app, cors_allowed_origins="*", async_mode="eventlet")
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
 # Database
@@ -54,7 +54,7 @@ db.init_app(app)
 
 # Extensions
 bcrypt = Bcrypt(app)
-#socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
 
 # Trading engines
 trading_engine = PaperTradingEngine(db)
@@ -680,14 +680,14 @@ def handle_disconnect():
 # ------------------ BACKGROUND TASKS ------------------
 def background_tasks():
     while True:
-        try:
-            stock_simulator.update_prices()
-            check_alerts()
-            prices = stock_simulator.get_all_prices()
-            socketio.emit('price_update', prices, room='prices')
-        except Exception as e:
-            logging.error(f"Background task error: {e}")
-
+        with app.app_context():
+            try:
+                stock_simulator.update_prices()
+                check_alerts()  # uses db.session
+                prices = stock_simulator.get_all_prices()
+                socketio.emit('price_update', prices, room='prices')
+            except Exception as e:
+                logging.error(f"Background task error: {e}")
         time.sleep(30)
 
 # Start background thread
